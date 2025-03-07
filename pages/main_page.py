@@ -1,5 +1,3 @@
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 from data.locators import *
 import allure
 from pages.base_page import BasePage
@@ -35,9 +33,3 @@ class MainPage(BasePage):
     @allure.step('Клик на лого "Yandex"')
     def click_yandex_logo(self):
         self.click(MainPageLocators.yandex_logo)
-
-
-    @allure.step('Переключиться на вкладку браузера. Проверяем: если нажать на логотип Яндекса, в новом окне через редирект откроется главная страница Дзена.')
-    def switch_window_to_new(self):
-        current_window = self.driver.current_window_handle
-        self.switch_window(current_window)

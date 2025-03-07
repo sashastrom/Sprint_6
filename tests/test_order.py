@@ -1,6 +1,6 @@
 from conftest import *
+from data.locators import OrderPageLocators
 from data.tests_data import ClientOrderData
-from pages.main_page import MainPage
 from pages.order_page import OrderPage
 from data.url import *
 import allure
@@ -8,65 +8,46 @@ import allure
 
 class TestOrder:
 
-    def fill_and_submit_order(self, order_page, order_data):
-        order_page.fill_order_form(
-            order_data['first_name'],
-            order_data['last_name'],
-            order_data['address'],
-            order_data['subway'],
-            order_data['telephone_number'],
-            order_data['date'],
-            order_data['rental_period'],
-            order_data['color'][0],
-            order_data['comment_for_courier']
-        )
+    @allure.title('Заполнение корректных данных и переход с 1-ого этапа на 2-ую страницу')
+    @allure.description('Проверяем что при корректно заполненных данных "Для Кого Самокат", '
+                        'и нажатии кнопки "Далее" переходим на 2-ую страницу Про Аренду')
+    def test_correct_input_order_data_for_client_first_page(self,driver):
+        order_page = OrderPage(driver)
+        order_page.go_to_site(Url.order_url)
+        order_page.click_cookie_accept()
+        order_page.fill_user_data(order_details=ClientOrderData.order_details['first_order_set'])
+        order_page.go_next()
+        assert len(order_page.find_elements(OrderPageLocators.order_button))>0
+
+    @allure.title('Заполнение корректных данных на 2-ой странице и успешное оформление заказа')
+    @allure.description('Проверяем что при корреткно заполненных данных Про Аренду, '
+                        'и нажатии кнопки "Заказать", заказ оформлен, видим модальное окно '
+                        'с подтверждением об успешном заказе и его номером')
+
+    @pytest.mark.parametrize('order_details', ['first_order_set', 'second_order_set'])
+    def test_proceeding_success_order_second_page_show_order_number_success(self, driver, order_details):
+        order_page = OrderPage(driver)
+        order_page.go_to_site(Url.order_url)
+        order_page.click_cookie_accept()
+        order_page.fill_user_data(order_details=ClientOrderData.order_details[order_details])
+        order_page.go_next()
+        order_page.fill_rent_data(order_details=ClientOrderData.order_details[order_details])
+        order_page.click_order_button()
+        order_page.click_accept_order_yes()
+        assert len(order_page.find_elements(OrderPageLocators.order_completed_info))>0
+
+    @allure.title('Оформление заказа и переход на страницу с заказом')
+    @allure.description('Проверяем успешное оформлении заказа, заказ отображается на странице "Статус заказа"')
+    @pytest.mark.parametrize('order_details', ['first_order_set', 'second_order_set'])
+    def test_create_order_and_get_order_status(self, driver, order_details):
+        order_page = OrderPage(driver)
+        order_page.go_to_site(Url.order_url)
+        order_page.click_cookie_accept()
+        order_page.fill_user_data(order_details=ClientOrderData.order_details[order_details])
+        order_page.go_next()
+        order_page.fill_rent_data(order_details=ClientOrderData.order_details[order_details])
         order_page.click_order_button()
         order_page.click_accept_order_yes()
         order_page.get_order_number()
         order_page.click_see_order_status()
         order_page.check_content_order_page()
-
-
-
-    @allure.title('Проверяем кнопку "Заказать" вверху страницы')
-    @allure.title('Заполнение 1-го набора данных')
-    @allure.description('Проверяем, что при корректном заполнении данных и нажатии на кнопку "Заказать", '
-        'происходит успешное оформление заказа, открывается модальное окно с подтверждением об успешном заказе.')
-
-    @pytest.mark.parametrize("order_data", [ClientOrderData.order_details['first_order_set']])
-    def test_order_top_button(self, driver, order_data):
-        main_page = MainPage(driver)
-        main_page.click_cookie_accept()
-        main_page.click_order_button_top()
-        order_page = OrderPage(driver)
-        self.fill_and_submit_order(order_page, order_data)
-        main_page.click_scooter_logo()
-
-
-    @allure.title('Проверяем кнопку "Заказать" внизу страницы')
-    @allure.title('Заполнение 2-го набора данных')
-    @allure.description('Проверяем, что при корректном заполнении данных и нажатии на кнопку "Заказать", '
-        'происходит успешное оформление заказа, открывается модальное окно с подтверждением об успешном заказе.')
-
-    @pytest.mark.parametrize("order_data", [ClientOrderData.order_details['second_order_set']])
-    def test_order_bottom_button(self, driver, order_data):
-        main_page = MainPage(driver)
-        main_page.click_cookie_accept()
-        main_page.click_order_button_bottom()
-        order_page = OrderPage(driver)
-        self.fill_and_submit_order(order_page, order_data)
-
-
-
-    @allure.title('Яндекс лого - открывает Дзен')
-    @allure.description('Проверяем: если нажать на логотип Яндекса, в новом окне через редирект откроется главная страница Дзена.')
-    def test_click_yandex_logo_opens_dzen(self, driver):
-        main_page = MainPage(driver)
-        main_page.click_cookie_accept()
-        main_page.click_yandex_logo()
-        main_page.switch_window()
-        main_page.wait_url_until_not_blank()
-        current_url = main_page.get_current_url()
-        assert (Url.main_url in current_url) or (Url.yandex_dzen_page in current_url) or (
-                    Url.yandex_page in current_url), \
-            f"Ожидался URL, содержащий один из: {Url.main_url}, {Url.yandex_dzen_page}, {Url.yandex_page}, но найден: {current_url}"

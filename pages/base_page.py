@@ -41,7 +41,7 @@ class BasePage:
         return self.driver.current_url
 
 
-    @allure.step('Переключиться на вкладку браузера')
+    @allure.step('Переключиться на вкладку браузера. Проверяем: если нажать на логотип Яндекса, в новом окне через редирект откроется главная страница Дзена.')
     def switch_window(self, time=10):
         WebDriverWait(self.driver, time).until(lambda d: len(d.window_handles) > 1)
         current_window = self.driver.current_window_handle
